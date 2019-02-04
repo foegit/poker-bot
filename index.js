@@ -5,7 +5,13 @@ require('dotenv').load();
 const dbConnect = require('./db/database');
 
 dbConnect.on('error', (err) => {
-  console.log('FUCKCKC~', err);
+  // eslint-disable-next-line no-console
+  console.log('! Error(database)', err);
+});
+
+dbConnect.once.on('open', () => {
+  // eslint-disable-next-line no-console
+  console.log('> MongoDB: ok');
 });
 
 const Deck = require('./deck');

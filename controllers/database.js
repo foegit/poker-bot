@@ -22,7 +22,6 @@ const createNewPlayer = async (ctx) => {
 
     await player.save();
   } catch (err) {
-    console.log(err.message);
     throw err;
   }
 };
@@ -32,7 +31,6 @@ const getPlayer = async (telegramId) => {
     const pl = await Player.findOne({ telegramId });
     return pl;
   } catch (err) {
-    console.log(err);
     throw err;
   }
 };
