@@ -12,7 +12,17 @@
   "dependencies": {
     "dotenv": "^6.2.0",
     "lodash": "^4.17.11",
+    "mongoose": "^5.4.9",
     "nodemon": "^1.18.9",
     "telegraf": "^3.27.0"
+  },
+  "devDependencies": {
+    "eslint": "^5.13.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-node": "^8.0.1",
+    "eslint-plugin-promise": "^4.0.1",
+    "eslint-plugin-standard": "^4.0.0"
   }
 }

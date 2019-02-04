@@ -1,0 +1,67 @@
+[
+  {
+    "title": "two",
+    "symbol": "2",
+    "order": 2
+  },
+  {
+    "title": "three",
+    "symbol": "3",
+    "order": 3
+  },
+  {
+    "title": "four",
+    "symbol": "4",
+    "order": 4
+  },
+  {
+    "title": "five",
+    "symbol": "5",
+    "order": 5
+  },
+  {
+    "title": "six",
+    "symbol": "6",
+    "order": 6
+  },
+  {
+    "title": "seven",
+    "symbol": "7",
+    "order": 7
+  },
+  {
+    "title": "eight",
+    "symbol": "8",
+    "order": 8
+  },
+  {
+    "title": "nine",
+    "symbol": "9",
+    "order": 9
+  },
+  {
+    "title": "ten",
+    "symbol": "10",
+    "order": 10
+  },
+  {
+    "title": "jack",
+    "symbol": "J",
+    "order": 11
+  },
+  {
+    "title": "queen",
+    "symbol": "Q",
+    "order": 12
+  },
+  {
+    "title": "king",
+    "symbol": "K",
+    "order": 13
+  },
+  {
+    "title": "ace",
+    "symbol": "A",
+    "order": 14
+  }
+]

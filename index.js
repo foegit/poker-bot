@@ -1,18 +1,28 @@
 const Telegraf = require('telegraf');
-const _ = require('lodash');
-
-const decks = require('./deck');
 
 require('dotenv').load();
+
+const dbConnect = require('./db/database');
+
+dbConnect.on('error', (err) => {
+  console.log('FUCKCKC~', err);
+});
+
+const Deck = require('./deck');
+const commands = require('./controllers/commands');
+
+let deck = new Deck();
 
 const token = process.env.BOT_TOKEN;
 
 const bot = new Telegraf(token);
 
-bot.start((ctx) => {
-  return ctx.reply(`Hello, ${ctx.from.first_name} ${_.sample(decks)}`);
-});
+bot.start(commands.start);
 
-bot.command('start', ctx => (ctx.reply('Hello')));
+bot.command('newDeck', ({ reply }) => {
+  deck = new Deck();
+  deck.shuffle();
+  return reply('New deck were created!');
+});
 
 bot.launch();
