@@ -1,0 +1,110 @@
+[
+  {
+    "title": {
+      "en": "Two",
+      "ua": "Двійка"
+    },
+    "symbol": "2",
+    "rank": 2
+  },
+  {
+    "title": {
+      "en": "Three",
+      "ua": "Трійка"
+    },
+    "symbol": "3",
+    "rank": 3
+  },
+  {
+    "title": {
+      "en": "Four",
+      "ua": "Четвірка"
+    },
+    "symbol": "4",
+    "rank": 4
+  },
+  {
+    "title": {
+      "en": "Five",
+      "ua": "П'ятірка"
+    },
+    "symbol": "5",
+    "rank": 5
+  },
+  {
+    "title": {
+      "en": "Six",
+      "ua": "Шістка"
+    },
+    "symbol": "6",
+    "rank": 6
+  },
+  {
+    "title": {
+      "en": "Seven",
+      "ua": "Сімка"
+    },
+    "symbol": "7",
+    "rank": 7
+  },
+  {
+    "title": {
+      "en": "Eight",
+      "ua": "Вісімка"
+    },
+    "symbol": "8",
+    "rank": 8
+  },
+  {
+    "title": {
+      "en": "Nine",
+      "ua": "Дев'ятка"
+    },
+    "symbol": "9",
+    "rank": 9
+  },
+  {
+    "title": {
+      "en": "Ten",
+      "ua": "Десятка"
+    },
+    "symbol": "T",
+    "rank": 10
+  },
+  {
+    "title": {
+      "en": "Jack",
+      "ua": "Валет",
+      "fn": "Валєра"
+    },
+    "symbol": "J",
+    "rank": 11
+  },
+  {
+    "title": {
+      "en": "Queen",
+      "ua": "Дама",
+      "fn": "Л. Українка"
+    },
+    "symbol": "Q",
+    "rank": 12
+  },
+  {
+    "title": {
+      "en": "King",
+      "ua": "Король",
+      "fn": "Карась"
+    },
+    "symbol": "K",
+    "rank": 13
+  },
+  {
+    "title": {
+      "en": "Ace",
+      "ua": "Туз",
+      "fn": "Луіджі"
+    },
+    "symbol": "A",
+    "rank": 14
+  }
+]

@@ -2,14 +2,14 @@ const _ = require('lodash');
 
 const Card = require('./card');
 
-const suits = require('./suits.json');
-const orders = require('./orders.json');
+const suits = require('./poker/data/suits');
+const orders = require('./poker/data//orders.json');
 
 
 class Deck {
   constructor() {
     this.cards = [];
-    orders.forEach(order => suits.forEach(suit => this.cards.push(new Card(order, suit))));
+    orders.forEach(order => suits.forEach(suit => this.cards.push(new Card(suit, order))));
     this.shuffle();
   }
 

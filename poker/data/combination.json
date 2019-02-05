@@ -1,0 +1,73 @@
+[
+  {
+    "title":
+    {
+      "en": "Royal flush",
+      "ua": "Флеш-рояль"
+    },
+    "rank": 10
+  },
+  {
+    "title": {
+      "en": "Straight flush",
+      "ua": "Стріт-флеш"
+    },
+    "rank": 9
+  },
+  {
+    "title": {
+      "en": "Four of a kind",
+      "ua": "Каре"
+    },
+    "rank": 8
+  },
+  {
+    "title": {
+      "en": "Full house",
+      "ua": "Фул-хаус"
+    },
+    "rank": 7
+  },
+  {
+    "title": {
+      "en": "Flush",
+      "ua": "Флеш"
+    },
+    "rank": 6
+  },
+  {
+    "title": {
+      "en": "Straight",
+      "ua": "Стріт"
+    },
+    "rank": 5
+  },
+  {
+    "title": {
+      "en": "Three of a kind",
+      "ua": "Сет"
+    },
+    "rank": 4
+  },
+  {
+    "title": {
+      "en": "Two pair",
+      "ua": "Дві пари"
+    },
+    "rank": 3
+  },
+  {
+    "title": {
+      "en": "Pair",
+      "ua": "Пара"
+    },
+    "rank": 2
+  },
+  {
+    "title": {
+      "en": "Highcard",
+      "ua": "Вища карта"
+    },
+    "rank": 1
+  }
+]

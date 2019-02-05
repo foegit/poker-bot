@@ -1,0 +1,38 @@
+[
+  {
+    "title": {
+     "en": "Diamonds",
+     "ua": "Бубна"
+    },
+    "symbol": "d",
+    "emoji": "♦️",
+    "value": 0
+  },
+  {
+    "title": {
+      "en": "Hearts",
+      "ua": "Чирва"
+    },
+    "symbol": "️h",
+    "emoji": "♥️",
+    "value": 1
+  },
+  {
+    "title": {
+      "en": "Spades",
+      "ua": "Піка"
+    },
+    "symbol": "s",
+    "emoji": "♠️",
+    "value": 2
+  },
+  {
+    "title": {
+      "en": "Clubs",
+      "ua": "Трефа"
+    },
+    "symbol": "c️",
+    "emoji": "♣️",
+    "value": 3
+  }
+]

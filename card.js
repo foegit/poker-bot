@@ -1,6 +1,6 @@
 class Card {
   constructor(suit, order) {
-    this.title = `[${suit.symbol}${order.symbol}]`;
+    this.title = `[${suit.emoji}${order.symbol}]`;
     this.suit = suit;
     this.order = order;
   }
