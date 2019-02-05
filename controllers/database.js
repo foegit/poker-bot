@@ -1,15 +1,5 @@
 const Player = require('../db/models/player');
 
-const isPlayerExist = async (telegramId) => {
-  const findRes = Player.findOne({
-    telegramId,
-  });
-  if (findRes) {
-    return true;
-  }
-  return false;
-};
-
 const createNewPlayer = async (ctx) => {
   try {
     const { from } = ctx;
@@ -26,6 +16,8 @@ const createNewPlayer = async (ctx) => {
   }
 };
 
+
+// return player obj or null if player not found
 const getPlayer = async (telegramId) => {
   try {
     const pl = await Player.findOne({ telegramId });
@@ -34,6 +26,8 @@ const getPlayer = async (telegramId) => {
     throw err;
   }
 };
+
+const isPlayerExist = async telegramId => !!(await getPlayer(telegramId));
 
 module.exports = {
   createNewPlayer,

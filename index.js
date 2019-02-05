@@ -6,10 +6,10 @@ const dbConnect = require('./db/database');
 
 dbConnect.on('error', (err) => {
   // eslint-disable-next-line no-console
-  console.log('! Error(database)', err);
+  console.log('! Error(database):\n', err);
 });
 
-dbConnect.once.on('open', () => {
+dbConnect.on('open', () => {
   // eslint-disable-next-line no-console
   console.log('> MongoDB: ok');
 });
