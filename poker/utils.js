@@ -10,13 +10,26 @@ const printCards = (cards) => {
 
 // Flush: 5 cards of the same suit
 const isFlush = (cards) => {
-  const needSuit = cards[0].suit.value;
-  for (let i = 1; i < cards.lengh; i += 1) {
-    if (needSuit !== cards[i].suit.value) {
-      return false;
-    }
+  if (cards.length < 5) {
+    return false;
   }
-  return true;
+
+  const counter = {
+    d: 0,
+    h: 0,
+    s: 0,
+    c: 0,
+  };
+
+  cards.forEach((card) => {
+    counter[card.suit] += 1;
+  });
+
+  if (counter.d >= 5 || counter.h >= 5 || counter.s >= 5 || counter.c >= 5) {
+    return true;
+  }
+
+  return false;
 };
 
 module.exports = {

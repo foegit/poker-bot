@@ -17,8 +17,8 @@ dbConnect.on('open', () => {
   console.log('> MongoDB: ok');
 });
 
-const Deck = require('./deck');
-const commands = require('./controllers/commands');
+const Deck = require('./cards/deck');
+const { start } = require('./controllers/commands');
 
 let deck = new Deck();
 
@@ -26,7 +26,7 @@ const token = process.env.BOT_TOKEN;
 
 const bot = new Telegraf(token);
 
-bot.start(commands.start);
+bot.start(start);
 
 bot.command('newDeck', ({ reply }) => {
   deck = new Deck();
