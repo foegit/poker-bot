@@ -11,7 +11,7 @@ class Deck {
     this.cards = [];
     orders.forEach(
       order => suits.forEach(
-        suit => this.cards.push(new Card(suit.symbol, order.symbol)),
+        suit => this.cards.push(new Card(`${order.symbol}${suit.symbol}`)),
       ),
     );
     this.shuffle();
