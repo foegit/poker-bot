@@ -9,8 +9,7 @@ const createNewPlayer = async (ctx) => {
       userName: from.username,
       registerDate: Date.now(),
     });
-
-    await player.save();
+    return await player.save();
   } catch (err) {
     throw err;
   }

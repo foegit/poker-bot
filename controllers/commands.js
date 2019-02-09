@@ -7,7 +7,7 @@ const start = async (ctx) => {
     ctx.reply(`Welcome back, ${account.userName}!\nYour balance: ${account.balance}🔹`);
   } else {
     const pl = await database.createNewPlayer(ctx);
-    ctx.reply(`Welcome, ${pl.userName}!\nYour balance: ${account.balance}🔹`);
+    ctx.reply(`Welcome, ${pl.userName}!\nYour balance: ${pl.balance}🔹`);
   }
 };
 

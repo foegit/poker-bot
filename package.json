@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
+    "deploy": "git push heroku master",
+    "logs": "heroku logs --tail",
     "test": "mocha --reporter spec"
   },
   "author": "",
