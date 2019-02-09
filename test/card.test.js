@@ -30,4 +30,18 @@ describe('Card object', () => {
     assert.equal(card3.getTitle(), 'T♥️');
     assert.equal(card4.getTitle(), 'A♦️');
   });
+
+  it('Card from string', () => {
+    assert.deepEqual(Card.createCardSet('2d:2h:2c:2s'), [
+      { suit: 'd', order: '2', rank: 2 },
+      { suit: 'h', order: '2', rank: 2 },
+      { suit: 'c', order: '2', rank: 2 },
+      { suit: 's', order: '2', rank: 2 },
+    ]);
+  });
+
+  it('Sort card', () => {
+    assert.deepEqual(Card.sortCards(Card.createCardSet('2d:2h:2c:2s')), Card.createCardSet('2c:2d:2h:2s'));
+    assert.deepEqual(Card.sortCards(Card.createCardSet('3d:kh:qc:3s:4s:5c')), Card.createCardSet('kh:qc:5c:4s:3d:3s'));
+  });
 });
