@@ -1,5 +1,6 @@
 const Telegraf = require('telegraf');
 // const _ = require('lodash');
+const http = require('http');
 
 
 require('dotenv').load();
@@ -35,3 +36,9 @@ bot.command('newDeck', ({ reply }) => {
 });
 
 bot.launch();
+
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.write('Hello World!');
+  res.end();
+}).listen(process.env.PORT);
