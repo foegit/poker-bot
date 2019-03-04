@@ -19,7 +19,7 @@ dbConnect.on('open', () => {
 });
 
 const Deck = require('./cards/deck');
-const { start } = require('./controllers/commands');
+const cmd = require('./controllers/commands');
 
 let deck = new Deck();
 
@@ -27,13 +27,25 @@ const token = process.env.BOT_TOKEN;
 
 const bot = new Telegraf(token);
 
-bot.start(start);
+bot.start(cmd.start);
 
 bot.command('newDeck', ({ reply }) => {
   deck = new Deck();
   deck.shuffle();
   return reply('New deck were created!');
 });
+
+bot.command('c', cmd.createTable);
+bot.command('create', cmd.createTable);
+bot.command('d', cmd.deleteTable);
+bot.command('delete', cmd.deleteTable);
+bot.command('l', cmd.leaveTable);
+bot.command('leave', cmd.leaveTable);
+bot.command('j', cmd.joinTable);
+bot.command('join', cmd.joinTable);
+bot.command('list', cmd.showTables);
+bot.command('say', cmd.say(bot));
+bot.command('cube', cmd.cube);
 
 bot.launch();
 
