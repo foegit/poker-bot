@@ -5,7 +5,6 @@ const Card = require('./card');
 const suits = require('./data/suits');
 const orders = require('./data/orders.json');
 
-
 class Deck {
   constructor() {
     this.cards = [];
@@ -19,6 +18,14 @@ class Deck {
 
   getRandomCard() {
     return _.sample(this.cards);
+  }
+
+  pickFront() {
+    return this.cards.shift();
+  }
+
+  pushBack(card) {
+    this.cards.push(card);
   }
 
   shuffle() {

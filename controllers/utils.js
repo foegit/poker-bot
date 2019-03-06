@@ -5,6 +5,17 @@ const getParam = (cmd) => {
   return cmd.split(' ').slice(1);
 };
 
+const cmdParams = (ctx) => {
+  const cmd = ctx.message.text;
+
+  if (cmd.length < 2 || cmd[0] !== '/' || cmd[1] === ' ') {
+    return false;
+  }
+  return cmd.split(' ').slice(1);
+};
+
+const cmdParam = ctx => cmdParams(ctx)[0];
+
 const spacer = (str, n, char = ' ') => {
   if (str.length >= n) {
     return str.slice(0, n + 1);
@@ -38,4 +49,6 @@ module.exports = {
   getParam,
   Sender,
   spacer,
+  cmdParam,
+  cmdParams,
 };

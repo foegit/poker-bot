@@ -5,10 +5,10 @@ const start = async (ctx) => {
   const { from } = ctx;
   const account = await database.getPlayer(from.id);
   if (account) {
-    ctx.reply(`Welcome back, ${account.userName}!\nYour balance: ${account.balance}🔹`);
+    ctx.replyWithMarkdown(`Привіт, ***${account.userName}***!\nТвій баланс: ${account.balance}🔹`);
   } else {
     const pl = await database.createNewPlayer(ctx);
-    ctx.reply(`Welcome, ${pl.userName}!\nYour balance: ${pl.balance}🔹`);
+    ctx.replyWithMarkdown(`***${pl.userName}***, ти вдало зар'єструвався!\nТвій баланс: ${pl.balance}🔹`);
   }
 };
 

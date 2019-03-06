@@ -17,6 +17,7 @@
     "lodash": "^4.17.11",
     "mongoose": "^5.4.9",
     "nodemon": "^1.18.9",
+    "shortid": "^2.2.14",
     "telegraf": "^3.27.0"
   },
   "devDependencies": {
