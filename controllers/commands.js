@@ -13,17 +13,22 @@ const start = async (ctx) => {
 };
 
 const createTable = async (ctx) => {
-  const pl = await database.getPlayer(ctx.from.id);
-  if (pl.currentTable) {
-    const currentTable = await database.getTable(pl.currentTable);
-    ctx.replyWithMarkdown(`Ти зараз за столом ***${currentTable.title}***. /leave - покинути стіл`);
-  } else {
-    await database.createTable(ctx);
+  console.log(getParam(ctx.message.text)[0]);
+  try {
+    Sender.ok(ctx,
+      await database.createTable(ctx.from.id, getParam(ctx.message.text)[0]));
+  } catch (err) {
+    Sender.error(ctx, err);
   }
 };
 
 const deleteTable = async (ctx) => {
-  await database.deleteTable(ctx);
+  try {
+    Sender.ok(ctx,
+      await database.deleteTable(ctx.from.id, getParam(ctx.message.text)[0]));
+  } catch (err) {
+    Sender.error(ctx, err);
+  }
 };
 
 const leaveTable = async (ctx) => {

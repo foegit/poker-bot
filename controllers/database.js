@@ -31,26 +31,55 @@ const getPlayer = async (telegramId) => {
 
 const getTable = async id => Table.findById(id);
 
-const createTable = async (ctx) => {
-  const title = ctx.message.text.split(' ')[1];
-  const owner = await getPlayer(ctx.from.id);
+const createTable = async (playerTId, title) => {
+  const trimTitle = title.trim();
+  if (trimTitle.length < 3) {
+    throw new Error('Назва стола має складатись мінімум з 3 символів');
+  }
+
+  if (trimTitle.length >= 9) {
+    throw new Error('Назва стола має складатись не більше 9 символів.');
+  }
+
+  const player = await Player.findOne({ telegramId: playerTId }).populate('currentTable');
+  if (player.currentTable) {
+    throw new Error(`Ви зараз за столом ${player.currentTable.title}. /leave для того щоб покинути стіл.`);
+  }
   const registerDate = Date.now();
-  const players = [owner];
+  const players = [player.id];
   const table = new Table({
-    title,
-    owner: owner._id,
+    title: trimTitle,
+    owner: player._id,
     registerDate,
     players,
   });
-  const res = await table.save();
-  const pl = await owner.update({ currentTable: res._id });
-  console.log(res, pl);
+  const createdTable = await table.save();
+  await player.update({ currentTable: createdTable._id });
+
+  return `Ви вдало створили стіл ${createdTable.title}. Вашим друзям потрібно ввести ***/j ${createdTable.title}***.`;
 };
 
-const deleteTable = async (ctx) => {
-  const owner = await getPlayer(ctx.from.id);
-  await owner.update({ currentTable: null });
-  await Table.deleteOne({ owner: owner._id });
+const deleteTable = async (playerTId) => {
+  const player = await Player.findOne({ telegramId: playerTId });
+  if (!player.currentTable) {
+    throw new Error('Ви не за столом.');
+  }
+
+  const table = await Table.findOne({ owner: player._id }).populate('players');
+  console.log(table);
+
+  if (!table.owner._id.equals(player._id)) {
+    throw new Error('Це на ваш стіл.');
+  }
+
+  const playerLeaveQuery = [];
+  for (let i = 0; i < table.players.length; i += 1) {
+    playerLeaveQuery.push(table.players[i].update({ currentTable: null }));
+  }
+
+  await Promise.all(playerLeaveQuery);
+  await table.delete();
+  return 'Стіл вдало був видалений.';
 };
 
 // const deleteTableIfEmpty = async (tableId) => {
