@@ -1,7 +1,11 @@
+const Sender = require('../controllers/sender');
 
 class Player {
   constructor() {
     this.gameId = null;
+
+    this.greeting = this.greeting.bind(this);
+    this.getTitle = this.getTitle.bind(this);
   }
 
   implementFromDB(dbplayer) {
@@ -20,6 +24,15 @@ class Player {
   leaveGame() {
     this.gameId = null;
     this.joinTime = null;
+  }
+
+  getTitle() {
+    return this.username || this.tid;
+  }
+
+  async greeting() {
+    const geetingMsg = `👋 Привіт, ***${this.getTitle()}***!\nТвій баланс ${this.balance}`;
+    await Sender.toPlayer(this, geetingMsg);
   }
 }
 

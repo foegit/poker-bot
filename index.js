@@ -1,39 +1,19 @@
-const Telegraf = require('telegraf');
-const http = require('http');
-
-const GameController = require('./controllers/game');
-const PlayerContoller = require('./controllers/player');
-
 require('dotenv').load();
 require('./db/database');
 
+const http = require('http');
+const Telegraf = require('telegraf');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
-const gms = new GameController();
-const plr = new PlayerContoller().getInstance();
+require('./controllers/sender').init(bot);
 
 
-bot.command('start', plr.start);
-bot.command('removeacc', plr.removeacc);
+const CommandHandler = require('./commandHandler/commandHandler');
+const Logger = require('./controllers/logger');
 
-bot.command('poker', gms.createGame);
-bot.command('delete', gms.deleteGame);
-bot.command('gamelist', gms.gameList);
-bot.command('join', gms.joinGame);
-bot.command('leave', gms.leaveGame);
+const cmd = new CommandHandler();
 
-// bot.command('c', cmd.createTable);
-// bot.command('create', cmd.createTable);
-// bot.command('d', cmd.deleteTable);
-// bot.command('delete', cmd.deleteTable);
-// bot.command('l', cmd.leaveTable);
-// bot.command('leave', cmd.leaveTable);
-// bot.command('j', cmd.joinTable);
-// bot.command('join', cmd.joinTable);
-// bot.command('list', cmd.showTables);
-// bot.command('say', cmd.say(bot));
-// bot.command('cube', cmd.cube);
-
+bot.on('text', cmd.handler);
 
 bot.launch();
 
@@ -44,3 +24,5 @@ http.createServer((req, res) => {
   res.write(`Visit ${process.env.botAdress}`);
   res.end();
 }).listen(PORT);
+
+Logger.add(`Server restart at ${PORT} port.`);

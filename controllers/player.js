@@ -2,28 +2,26 @@ const PlayerModel = require('../db/models/player');
 const Player = require('../poker/player');
 const { Sender } = require('./utils');
 
-
 class PlayerController {
   constructor() {
-    this.players = []; // array of all active player
+    if (!PlayerController.instance) {
+      this.players = []; // array of all active player
 
-    this.isExist = this.isExist.bind(this);
-    this.wakeUp = this.wakeUp.bind(this);
-    this.sleep = this.sleep.bind(this);
-    this.getPlayer = this.getPlayer.bind(this);
+      this.isExist = this.isExist.bind(this);
+      this.getPlayer = this.getPlayer.bind(this);
 
-    this.signIn = this.signIn.bind(this);
-    this.start = this.start.bind(this);
-    this.removeacc = this.removeacc.bind(this);
+      this.sleep = this.sleep.bind(this);
+      this.getPlayer = this.getPlayer.bind(this);
+
+      this.start = this.start.bind(this);
+      this.removeacc = this.removeacc.bind(this);
+      PlayerController.instance = this;
+    }
+    return PlayerController.instance;
   }
 
-  isExist(tid) {
-    for (let i = 0; i < this.players.length; i += 1) {
-      if (this.players[i].tid === tid) {
-        return true;
-      }
-    }
-    return false;
+  isExist(ctx) {
+    return (this.players.find(p => p.tid === ctx.from.id) || null);
   }
 
   sleep(ctx) {
@@ -32,26 +30,33 @@ class PlayerController {
   }
 
   async getPlayer(ctx) {
-    return (this.players.find(p => p.tid === ctx.from.id) || false);
+    const { id } = ctx.from;
+
+    const playerFromPool = this.isExist(ctx);
+
+
+    if (playerFromPool) {
+      return playerFromPool;
+    }
+
+    let playerFromDb = await PlayerModel.findOne({ tid: id });
+    if (!playerFromDb) {
+      playerFromDb = await PlayerController.signIn(ctx);
+    }
+    return this.activatePlayer(playerFromDb);
   }
 
-  async wakeUp(ctx, sendResponse = true) {
-    const fromDB = await PlayerModel.findOne({ tid: ctx.from.id });
-    if (!fromDB) {
-      return false;
-    }
+
+  activatePlayer(fromDb) {
     const player = new Player();
-    player.implementFromDB(fromDB);
+    player.implementFromDB(fromDb);
     player.authDate = Date.now();
     player.lastActivity = player.authDate;
     this.players.push(player);
-    if (sendResponse) {
-      Sender.ok(ctx, `З поверненням, ***${fromDB.username || fromDB.tid}***!`);
-    }
     return player;
   }
 
-  async signIn(ctx) {
+  static async signIn(ctx) {
     const newPlayer = new PlayerModel({
       tid: ctx.from.id,
       username: ctx.from.username,
@@ -59,9 +64,9 @@ class PlayerController {
       registerDate: Date.now(),
       balance: 100,
     });
-    const fromDB = await newPlayer.save();
-    await this.wakeUp(ctx, false);
-    Sender.ok(ctx, `Привіт, ***${fromDB.username || fromDB.tid}***. {опис бота}`);
+
+    const fromDb = await newPlayer.save();
+    return fromDb;
   }
 
   async start(ctx) {
@@ -86,17 +91,5 @@ class PlayerController {
   }
 }
 
-class Singleton {
-  constructor() {
-    if (!Singleton.instance) {
-      Singleton.instance = new PlayerController();
-    }
-  }
-
-  // eslint-disable-next-line
-  getInstance() {
-    return Singleton.instance;
-  }
-}
-
-module.exports = Singleton;
+const instance = new PlayerController();
+module.exports = instance;
