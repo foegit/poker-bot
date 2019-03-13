@@ -1,15 +1,8 @@
 const shortid = require('shortid');
 
-// const Player = require('../db/models/player');
 const Game = require('../poker/game');
 const PlayerController = require('./player');
 const Sender = require('./sender');
-
-
-const {
-  getParam,
-} = require('./utils');
-
 
 class GameController {
   constructor() {
@@ -29,15 +22,15 @@ class GameController {
 
   async createGame(player, title) {
     const id = shortid.generate();
-    player.joinTo(id);
     const game = new Game(id, title, player);
     this.games.push(game);
+    player.joinTo(game);
     return game;
   }
 
-  async deleteGame(ctx) {
-    const gameId = getParam(ctx.message.from);
-    this.games = this.games.filter(game => game.id !== gameId);
+  async deleteGame(game) {
+    game.players.forEach(p => p.leave());
+    this.games = this.games.filter(g => g.id !== game.id);
   }
 
   getGameById(gameId) {

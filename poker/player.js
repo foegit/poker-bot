@@ -1,10 +1,9 @@
-const Sender = require('../controllers/sender');
-
 class Player {
   constructor() {
-    this.gameId = null;
+    this.game = null;
+    this.joinTime = null;
+    this.leaveTime = null;
 
-    this.greeting = this.greeting.bind(this);
     this.getTitle = this.getTitle.bind(this);
   }
 
@@ -16,23 +15,19 @@ class Player {
     this.balance = dbplayer.balance;
   }
 
-  joinTo(id) {
-    this.gameId = id;
+  joinTo(game) {
+    this.game = game;
     this.joinTime = Date.now();
   }
 
-  leaveGame() {
-    this.gameId = null;
-    this.joinTime = null;
+  leave() {
+    this.game.leave(this);
+    this.game = null;
+    this.leaveTime = Date.now();
   }
 
   getTitle() {
     return this.username || this.tid;
-  }
-
-  async greeting() {
-    const geetingMsg = `👋 Привіт, ***${this.getTitle()}***!\nТвій баланс ${this.balance}`;
-    await Sender.toPlayer(this, geetingMsg);
   }
 }
 

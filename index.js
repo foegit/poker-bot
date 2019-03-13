@@ -8,7 +8,7 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 require('./controllers/sender').init(bot);
 
 
-const CommandHandler = require('./commandHandler/commandHandler');
+const CommandHandler = require('./command/handler');
 const Logger = require('./controllers/logger');
 
 const cmd = new CommandHandler();

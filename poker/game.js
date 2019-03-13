@@ -3,22 +3,25 @@
 const Deck = require('../cards/deck');
 
 const status = {
-  WAIT_PLAYER: 'Очікування гравців',
+  WAIT_PLAYER: 'WAIT_PLAYER',
+  BLIND: 'BLIND',
+  PRE_FLOP: 'PRE_FLOP',
+  FLOP: 'FLOP',
+  TURN: 'TURN',
+  RIVER: 'RIVER',
 };
 
 class Game {
   constructor(gameId, title, player) {
     this.id = gameId;
     this.title = title;
-    this.players = [];
-    this.players.push(player);
+    this.players = [player];
     this.owner = player;
-
     this.deck = new Deck();
     this.pickedCards = [];
-    this.dealer = player.tid;
+    this.dealer = player;
 
-    this.currentPlayer = player.tid;
+    this.currentPlayer = player;
     this.status = status.WAIT_PLAYER;
     this.isEnd = false;
 
@@ -52,6 +55,11 @@ class Game {
       this.owner = newOwner;
     }
   }
+
+  start() {
+    this.status = status.BLIND;
+  }
+  
 }
 
 module.exports = Game;

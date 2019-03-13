@@ -3,6 +3,8 @@ class Sender {
     if (!Sender.instance) {
       this.bot = null;
       this.log = [];
+
+      this.sendAll = this.sendAll.bind(this);
       Sender.instance = this;
     }
     return Sender.instance;
@@ -35,6 +37,13 @@ class Sender {
 
   async toPlayer(player, msgText) {
     await this.bot.telegram.sendMessage(player.chatId, msgText, { parse_mode: 'markdown' });
+  }
+
+  async sendAll(players, msgText) {
+    const msgpool = [];
+    players.forEach(p => msgpool.push(this.toPlayer(p, msgText)));
+
+    await Promise.all(msgpool);
   }
 }
 
