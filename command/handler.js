@@ -52,6 +52,7 @@ class CommandHandler {
       case '/cube': await CommandHandler.cube(ctx); break; // TODO:  create another file for this func like toys.js
       // POKER
       case '/begin': await this.begin(ctx); break;
+      case '/bet': await this.bet(ctx); break;
       default: CommandHandler.unknown(ctx); break;
     }
   }
@@ -212,9 +213,10 @@ class CommandHandler {
 
   async begin(ctx) {
     const player = await this.getPlayer(ctx);
+    const { game } = player;
 
     if (!player.game) {
-      Sender.error(ctx, 'Ви не гражте в жодну гру!');
+      Sender.error(ctx, 'Ви не граєте в жодну гру!');
       return;
     }
 
@@ -223,8 +225,30 @@ class CommandHandler {
       return;
     }
 
-    player.game.start();
-    Sender.sendAll(player.game.players, '💰 ***Гра почалась***');
+    game.start();
+    await Sender.sendAll(player.game.players, '💰 ***Гра почалась***');
+    game.preFlop();
+    game.currCircle.remainPlayer.forEach(async (p) => {
+      const msg = `***Пре-флоп***\nВаші карти: ${p.cards[0].getTitle()} ${p.cards[1].getTitle()}`;
+      const info = p === game.currCircle.underTheGun ? `***🔫 Ваш хід!***\n${game.getAvailableMoves(p)}` : `Хід ${game.currCircle.underTheGun.getTitle()} ...`;
+      await Sender.toPlayer(p, `${msg}\n${info}`);
+    });
+  }
+
+  async bet(ctx) {
+    const player = await this.getPlayer(ctx);
+    const { game } = player;
+    if (game.isYouMove(player)) {
+      Sender.error(ctx, `Зараз хід ${game.currCircle.underTheGun.getTitle()}.`);
+      return;
+    }
+
+    const sum = Parser.getParam(ctx);
+    if (sum > player.balance) {
+      Sender.error(ctx, `Зараз хід ${game.currCircle.underTheGun.getTitle()}.`);
+    }
+
+    
   }
 
   static unknown(ctx) {

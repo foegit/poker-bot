@@ -3,6 +3,7 @@ class Player {
     this.game = null;
     this.joinTime = null;
     this.leaveTime = null;
+    this.cards = null;
 
     this.getTitle = this.getTitle.bind(this);
   }
@@ -28,6 +29,10 @@ class Player {
 
   getTitle() {
     return this.username || this.tid;
+  }
+
+  setCards(cards) {
+    this.cards = cards;
   }
 }
 
