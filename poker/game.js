@@ -1,85 +1,56 @@
+const Emitter = require('events');
+
 const Deck = require('../cards/deck');
 const Sender = require('../controllers/sender');
 const moveType = require('../const/move');
 const round = require('../const/gameRound');
 
-class MoveResult {
-  constructor(done, msg) {
-    this.done = done;
-    this.msg = msg;
-  }
-
-  static success(msg) {
-    return new MoveResult(true, msg);
-  }
-
-  static fail(msg) {
-    return new MoveResult(false, msg);
-  }
-}
-
-class HoldemPlayer {
-  constructor(player) {
-    this.player = player;
-    this.cards = [];
-    this.bet = 0;
-    this.fold = false;
-  }
-
-  static wrapPlayer(player) {
-    return new HoldemPlayer(player);
-  }
-
-  static wrapPlayers(players) {
-    return players.map(p => HoldemPlayer.wrapPlayer(p));
-  }
-
-  reset() {
-    this.cards = [];
-    this.bet = 0;
-    this.fold = false;
-  }
-
-  setCards(cards) {
-    this.cards = cards;
-  }
-
-  cleanCards() {
-    const { cards } = this;
-    this.cards = [];
-    return cards;
-  }
-}
-
-class Game {
+class Game extends Emitter {
   constructor(gameId, title, player) {
+    super();
     this.id = gameId;
     this.title = title;
     this.players = [player];
     this.owner = player;
     this.deck = new Deck();
-
-    this.currentPlayer = player;
+    this.minBet = 0;
+    this.maxBet = 100;
 
     this.currCircle = {
       round: round.preFlop,
       dealer: null,
-      smallBlind: null,
-      bigBlind: null,
       underTheGun: null,
-      remainPlayer: [],
       pickedCard: [],
       bet: 0,
       bank: 0,
       boardCard: [],
+      isEnd: false,
     };
     this.isEnd = false;
 
-
     this.join = this.join.bind(this);
     this.leave = this.leave.bind(this);
+
+    this.emit('create', this);
   }
 
+  getMinBet() {
+    return this.minBet;
+  }
+
+  getMaxBet() {
+    return this.maxBet;
+  }
+
+  info() {
+    let info = `Гра ***"${this.title}"***\n`;
+    info += `Банк: ${this.currCircle.bank}\n`;
+    info += `Мінімальна ставка: ${this.currCircle.bet}\n`;
+    info += `Очікування ходу: ${this.currCircle.underTheGun}\n`;
+    info += `Дилер: ${this.dealer}`;
+
+    return info;
+  }
 
   shuffle() {
     this.deck.shuffle();
@@ -102,39 +73,113 @@ class Game {
     }
   }
 
-  start() {
+  start(player) {
+    if (player !== this.owner) {
+      throw new Error('Розпочати гру може тільки адмін.');
+    }
+
+    this.emit('start', this);
+    this.startPreFlop();
+  }
+
+  // метод повертає гравця який наступним має ходити
+  // або false якщо всі гравці зробили хід або скинули карти.
+
+  getNextUTG() {
+    const { currCircle } = this;
+    const { players } = this;
+    const currUTGIndex = players.indexOf(currCircle.underTheGun);
+    let nextUTGIndex = -1;
+
+    for (let i = 1; i < players.length; i += 1) {
+      const index = (i + currUTGIndex) % players.length;
+      if (!players[index].isFold && players[index].bet !== currCircle.bet) {
+        nextUTGIndex = index;
+      }
+    }
+    if (nextUTGIndex === -1) {
+      return false;
+    }
+
+    return players[nextUTGIndex];
+  }
+
+  // гра починається з пре-флопа
+  // 1. колода тасується
+  // 2. ініціалізується початкові значення круга
+  // 3. кожному гравцеві роздається по дві карти
+
+  startPreFlop() {
     this.currCircle = {
       round: round.preFlop,
       dealer: this.players[0],
       underTheGun: this.players[1],
-      players: HoldemPlayer.wrapPlayers(this.players),
+      remainPlayers: this.players,
       pickedCard: [],
       boardCard: [],
       bet: 0,
       bank: 0,
+      isEnd: false,
     };
+
+    const { pickedCard } = this.currCircle;
+    const { players } = this;
+
+    players.forEach((p) => {
+      const [c1, c2] = [this.deck.pickFront(), this.deck.pickFront()];
+      pickedCard.push(c1, c2);
+      p.setCards([c1, c2]);
+    });
+
+    this.emit('handOutPreFlopCards', this);
   }
 
-  getNextUTG() {
-    const { currCircle } = this;
-    const index = currCircle.remainPlayers.indexOf(currCircle.underTheGun) % currCircle.remainPlayer.length;
+  startFlop() {
+    const { currCircle, players, deck } = this;
 
-    return this.currCircle.players.find(p => p.isMove);
+    currCircle.round = round.flop;
+    currCircle.underTheGun = players[1];
+
+    const [c1, c2, c3] = [deck.pickFront(), deck.pickFront(), deck.pickFront()];
+
+    currCircle.pickedCard.push(c1, c2, c3);
+    currCircle.boardCard.push(c1, c2, c3);
+
+    this.emit('setFlopCards', this);
   }
+
+  // далі кожен гравець повинний зробити свій хід
+  // на префлопі гравці можуть поставити початкову ставку
+  // підтримати ставку або підвищити її
+  // а також вийти з гри скинувши карти
 
   requestMove() {
-    const player = this.currCircle.undetTheGun;
+    const player = this.currCircle.underTheGun;
     const moves = this.getAvailableMoves(player);
-    Sender.toPlayer(this.currCircle.undetTheGun, `Ваш хід.\n${moves}`);
+    Sender.toPlayer(player, `Ваш хід.\n${moves}`);
   }
 
-  preFlop() {
-    this.shuffle();
-    const { remainPlayer } = this.currCircle;
-    remainPlayer.forEach((p) => {
-      const cards = [this.deck.pickFront(), this.deck.pickFront()];
-      p.setCards(cards);
-    });
+  getMovePlayer() {
+    return this.currCircle.underTheGun;
+  }
+
+  move(player, type, sum) {
+    if (player !== this.getMovePlayer()) {
+      throw new Error('Зараз не ваш хід');
+    }
+
+    try {
+      switch (type) {
+        case moveType.bet: this.bet(player, sum); break;
+        case moveType.call: this.call(player); break;
+        case moveType.raise: this.raise(player, sum); break;
+        case moveType.check: this.check(player); break;
+        case moveType.fold: this.fold(player); break;
+        default: throw new Error('Невідома команда');
+      }
+    } catch (err) {
+      throw err;
+    }
   }
 
   getAvailableMoves(player) {
@@ -146,7 +191,9 @@ class Game {
 
     if (this.currCircle.bet === 0) {
       moves += '▫️ ***/bet sum*** - зробити ставку sum\n';
-      moves += '▫️ ***/check*** - не робити ставку\n';
+      if (this.currCircle.round !== round.preFlop) {
+        moves += '▫️ ***/check*** - пропустити ставку\n';
+      }
     } else {
       moves += `▫️ ***/call*** - підтримати поточну ставку (${this.currCircle.bet})\n`;
       moves += '▫️ ***/raise sum*** - підвищити ставку на sum\n';
@@ -158,30 +205,79 @@ class Game {
   }
 
   isYouMove(player) {
-    return (player.tid === this.currentPlayer.tid);
+    return (player.tid === this.currCircle.underTheGun);
   }
 
-  move(player, type, sum = 0) {
-    if (!this.isYouMove(player)) {
-      return MoveResult.fail('Зараз не ваш хід');
+
+  // визначає наступного гравця для ходу,
+  // якщо таких не залишилось в данному крузі
+  // то почати наступний або розкрити карти якщо це кінець рівера
+
+  moveEnd() {
+    const utg = this.getNextUTG();
+    if (!utg) {
+      this.nextRound();
+      return;
     }
 
-    switch (type) {
-      case moveType.bet: return this.bet(player, sum);
-      case moveType.call: return this.call(player);
-      case moveType.raise: return this.raise(player, sum);
-      case moveType.check: return this.check(player);
-      case moveType.fold: return this.fold(player);
-      default: return MoveResult.fail('Невідома команда');
-    }
+    this.currCircle.underTheGun = utg;
+    this.requestMove();
   }
 
-  bet(sum) { // зробити початкову ставку
+  nextRound() {
+    // всі гравці зробили ставки
+    const { currCircle } = this;
+
+    switch (currCircle.round) {
+      // mocks
+      case round.blind: this.startPreFlop(); break;
+      case round.preFlop: this.startFlop(); break;
+      case round.flop: this.startTurn(); break;
+      case round.turn: this.startRiver(); break;
+      case round.river: this.showDown(); break;
+      default: return false;
+    }
+
+    return true;
+  }
+
+  bet(player, sum) { // зробити початкову ставку
+    const { currCircle } = this;
+    if (currCircle.bet !== 0) {
+      throw new Error(`Початкова ставка уже зроблена: ${currCircle.bet}.\nВи можете підтримати її(/call), або підвищити (/raise sum)`);
+    }
+
+    if (sum === undefined) {
+      throw new Error('Потрібно вказати суму ставки.\n***/bet*** sum');
+    }
+
+    if (sum <= this.minBet) {
+      throw new Error(`Ставка має бути більше ${this.minBet}.`);
+    }
+
+    if (sum > this.maxBet) {
+      throw new Error(`Ставка має бути більше ${this.maxBet}.`);
+    }
+
     this.currCircle.bet = sum;
+    this.currCircle.underTheGun.bet = sum;
+    this.currCircle.bank += sum;
+    this.emit('bet', { game: this, player, sum });
+    this.moveEnd();
   }
 
-  call() { // підтримати ставк
+  call() { // підтримати ставку
+    const { currCircle } = this;
+    const player = currCircle.underTheGun;
+    if (currCircle.bet === 0) {
+      throw new Error(`Початкова ставка ще не зроблена.\n ***/bet sum*** - щоб зробити ставку ${currCircle.round !== round.preFlop ? ', /check - не робити ставку' : ''}.`);
+    }
 
+    player.bet = currCircle.bet;
+    currCircle.bank += this.currCircle.bet;
+
+    this.emit('call', { game: this, player, sum: currCircle.bet });
+    this.moveEnd();
   }
 
   raise() { // збільшити ставку

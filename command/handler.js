@@ -2,9 +2,11 @@ const PlayerContoller = require('../controllers/player');
 const GameController = require('../controllers/game');
 const Sender = require('../controllers/sender');
 const Logger = require('../controllers/logger');
+const msg = require('../messeges/messege');
 
 const { spacer } = require('../controllers/utils');
 const Parser = require('./parser');
+const moveType = require('../const/move');
 
 class CommandHandler {
   constructor() {
@@ -34,39 +36,38 @@ class CommandHandler {
 
   async handler(ctx) {
     const command = Parser.getCommand(ctx.message.text);
-
     if (!command) {
       return;
     }
 
-    Logger.cmd(ctx);
+    await  console.log(1);
+    const player = await this.getPlayer(ctx);
     switch (command) {
-      case '/start': await this.start(ctx); break;
-      case '/game': await this.game(ctx); break;
-      case '/delete': await this.delete(ctx); break;
-      case '/gamelist': await this.gamelist(ctx); break;
-      case '/join': await this.join(ctx); break;
-      case '/leave': await this.leave(ctx); break;
-      case '/here': await this.here(ctx); break;
-      case '/say': await this.say(ctx); break;
-      case '/cube': await CommandHandler.cube(ctx); break; // TODO:  create another file for this func like toys.js
+      case '/start': await this.start(ctx, player); break;
+      case '/game': await this.game(ctx, player); break;
+      case '/delete': await this.delete(ctx, player); break;
+      case '/gamelist': await this.gamelist(ctx, player); break;
+      case '/join': await this.join(ctx, player); break;
+      case '/cube': await CommandHandler.cube(ctx, player); break; // TODO:  create another file for this func like toys.js
+      // TABLE
+      case '/leave': await this.leave(ctx, player); break;
+      case '/here': await this.here(ctx, player); break;
+      case '/say': await this.say(ctx, player); break;
       // POKER
-      case '/begin': await this.begin(ctx); break;
-      case '/bet': await this.bet(ctx); break;
-      default: CommandHandler.unknown(ctx); break;
+      case '/begin': await this.begin(ctx, player); break;
+      case '/bet': await this.bet(ctx, player); break;
+      case '/call': await this.call(ctx, player); break;
+      default: CommandHandler.unknown(ctx, player); break;
     }
+    Logger.cmd(ctx);
+    await console.log(2);
   }
 
-
-  async start(ctx) {
-    const player = await this.getPlayer(ctx);
-    const geetingMsg = `👋 Привіт, ***${player.getTitle()}***!\nТвій баланс ${player.balance}`;
-    await Sender.toPlayer(player, geetingMsg);
+  async start(ctx, player) {
+    await Sender.sendMessage(ctx, msg.greeting(player));
   }
 
-  async game(ctx) {
-    const player = await this.getPlayer(ctx);
-
+  async game(ctx, player) {
     if (player.game) {
       Sender.error(ctx, `Для створення нової гри потрібно покинути поточну(${player.game.title})`);
       return;
@@ -91,12 +92,10 @@ class CommandHandler {
 
     const game = await this.gameController.createGame(player, title);
     player.joinTo(game);
-    Sender.success(ctx, `Гра вдало створена.\n/join ${game.title} - щоб приєднатись до гри.`);
+    Sender.success(ctx, msg.gameCreated(game));
   }
 
-  async delete(ctx) {
-    const player = await this.getPlayer(ctx);
-
+  async delete(ctx, player) {
     if (!player.game) {
       Sender.error(ctx, 'Ви не граєте.');
       return;
@@ -151,7 +150,7 @@ class CommandHandler {
 
     if (player.game) {
       if (player.game.id === game.id) {
-        Sender.sendMessage(ctx, 'Ви вже в цій грі.');
+        Sender.error(ctx, 'Ви вже в цій грі.');
         return;
       }
       Sender.error(ctx, `Для приєднання до нової необхідно покинути поточну - ${player.game.title}\n▫️ ***/leave*** - щоб покинути поточну гру.`);
@@ -162,6 +161,7 @@ class CommandHandler {
     game.join(player);
 
     Sender.success(ctx, 'Ви вдало приєднались до гри.\n▫️ ***/here*** - щоб переглянути список гравців.');
+    Sender.sendAll(game.players.filter(p => p !== player), `🐾 ***${player.getTitle()}*** приєднався до гри.`);
   }
 
   async leave(ctx) {
@@ -195,18 +195,17 @@ class CommandHandler {
 
   async say(ctx) {
     const player = await this.getPlayer(ctx);
-    if (!player.gameId) {
+    const { game } = player;
+    if (!game) {
       Sender.error(ctx, 'Ви не граєте в жодну гру.');
-
       return;
     }
 
-    const game = this.getGameById(player.gameId);
     const message = Parser.getParams(ctx).join(' ');
-    const players = game.players.filter(p => p.tid !== player.tid);
+    const players = game.players.filter(p => p !== player);
 
     const sendQueue = [];
-    players.forEach(p => sendQueue.push(Sender.toPlayer(p, `***${player.getTitle()}:*** ${message}`)));
+    players.forEach(p => sendQueue.push(Sender.toPlayer(p, `💬 ***${player.getTitle()}:*** ${message}`)));
 
     await Promise.all(sendQueue);
   }
@@ -220,35 +219,40 @@ class CommandHandler {
       return;
     }
 
-    if (player.tid !== player.game.owner.tid) {
-      Sender.error(ctx, `Почати гру може тільки адмін - ${player.game.owner.getTitle()}`);
-      return;
+    try {
+      game.start(player);
+    } catch (err) {
+      Sender.error(ctx, err);
     }
-
-    game.start();
-    await Sender.sendAll(player.game.players, '💰 ***Гра почалась***');
-    game.preFlop();
-    game.currCircle.remainPlayer.forEach(async (p) => {
-      const msg = `***Пре-флоп***\nВаші карти: ${p.cards[0].getTitle()} ${p.cards[1].getTitle()}`;
-      const info = p === game.currCircle.underTheGun ? `***🔫 Ваш хід!***\n${game.getAvailableMoves(p)}` : `Хід ${game.currCircle.underTheGun.getTitle()} ...`;
-      await Sender.toPlayer(p, `${msg}\n${info}`);
-    });
   }
 
-  async bet(ctx) {
-    const player = await this.getPlayer(ctx);
+  async bet(ctx, player) {
     const { game } = player;
-    if (game.isYouMove(player)) {
-      Sender.error(ctx, `Зараз хід ${game.currCircle.underTheGun.getTitle()}.`);
+    if (!player.game) {
+      Sender.error(ctx, 'Ви не граєте в жодну гру!');
+      return;
+    }
+    const sum = +(Parser.getParam(ctx));
+    try {
+      game.move(player, moveType.bet, sum);
+    } catch (err) {
+      Sender.error(ctx, err);
+    }
+  }
+
+  async call(ctx, player) {
+    console.log(3);
+    const { game } = player;
+    if (!player.game) {
+      Sender.error(ctx, 'Ви не граєте в жодну гру!');
       return;
     }
 
-    const sum = Parser.getParam(ctx);
-    if (sum > player.balance) {
-      Sender.error(ctx, `Зараз хід ${game.currCircle.underTheGun.getTitle()}.`);
+    try {
+      game.move(player, moveType.call);
+    } catch (err) {
+      Sender.error(ctx, err);
     }
-
-    
   }
 
   static unknown(ctx) {

@@ -3,7 +3,11 @@ class Player {
     this.game = null;
     this.joinTime = null;
     this.leaveTime = null;
+    // in game
     this.cards = null;
+    this.isMakeBet = false;
+    this.bet = 0;
+    this.isFold = false;
 
     this.getTitle = this.getTitle.bind(this);
   }
@@ -33,6 +37,13 @@ class Player {
 
   setCards(cards) {
     this.cards = cards;
+  }
+
+  reset() {
+    this.cards = null;
+    this.isMakeBet = false;
+    this.currBet = 0;
+    this.isFold = false;
   }
 }
 

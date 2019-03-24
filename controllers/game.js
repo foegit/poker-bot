@@ -1,20 +1,21 @@
+const Event = require('events');
 const shortid = require('shortid');
 
 const Game = require('../poker/game');
 const PlayerController = require('./player');
 const Sender = require('./sender');
+const Text = require('../messeges/messege');
 
-class GameController {
+class GameController extends Event {
   constructor() {
+    super();
     if (!GameController.instance) {
       this.games = [];
       this.playerController = PlayerController;
 
       this.createGame = this.createGame.bind(this);
-      this.createGame = this.createGame.bind(this);
       this.getGameById = this.getGameById.bind(this);
       this.getGameByTitle = this.getGameByTitle.bind(this);
-      this.leaveGame = this.leaveGame.bind(this);
 
       GameController.instance = this;
     }
@@ -25,6 +26,13 @@ class GameController {
     const game = new Game(id, title, player);
     this.games.push(game);
     player.joinTo(game);
+
+    game.on('start', this.gameStart);
+    game.on('handOutPreFlopCards', this.firstCards);
+    game.on('setFlopCards', this.firstBoardCards);
+    game.on('bet', this.makeBet);
+    game.on('call', this.callBet);
+
     return game;
   }
 
@@ -41,25 +49,31 @@ class GameController {
     return (this.games.find(g => g.title === gameTitle) || false);
   }
 
-  async leaveGame(ctx) {
-    const player = await this.auth(ctx);
-    if (!player) {
-      return false;
-    }
-    if (player.gameId === null) {
-      Sender.error(ctx, 'Ви не граєте.');
-    }
+  async gameStart(game) {
+    await Sender.toAll(game.players, Text.gameStarted(game));
+    game.requestMove();
+  }
 
-    const game = this.getGameById(player.gameId);
-    if (!game) {
-      return false;
-    }
+  async firstCards(game) {
+    const sendQueue = [];
 
-    game.leave(player);
-    player.leaveGame();
+    game.players.forEach((p) => {
+      sendQueue.push(Sender.toPlayer(p, Text.youCards(p)));
+    });
 
-    Sender.ok(ctx, 'Ви покинули гру.');
-    return game;
+    Promise.all(sendQueue);
+  }
+
+  async firstBoardCards(game) {
+    await Sender.toAll(game.players, Text.flopCards(game));
+  }
+
+  async makeBet({ game, player, sum }) {
+    await Sender.toAll(game.players, Text.makeBet(player, sum));
+  }
+
+  async callBet({ game, player, sum }) {
+    await Sender.toAll(game.players, Text.callBet(player, sum));
   }
 }
 
