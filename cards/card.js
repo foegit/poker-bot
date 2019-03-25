@@ -13,10 +13,18 @@ class Card {
 
   static createCardSet(cardString) {
     const cards = [];
+    if (cardString === '' || cardString === undefined) {
+      return cards;
+    }
     cardString.split(':').forEach((card) => {
       cards.push(new Card(card));
     });
+
     return cards;
+  }
+
+  static set(cardString) {
+    return Card.createCardSet(cardString);
   }
 
   static sortCards(cards) {
@@ -34,6 +42,26 @@ class Card {
 
   compare(card) {
     return (this.order === card.order && this.suit === card.suit);
+  }
+
+  greaterThan(card) {
+    return (this.rank > card.rank);
+  }
+
+  lessThan(card) {
+    return (this.rank < card.rank);
+  }
+
+  greterEqualThan(card) {
+    return (this.rank >= card.rank);
+  }
+
+  lessEqualThan(card) {
+    return (this.rank <= card.rank);
+  }
+
+  equal(card) {
+    return (this.rank === card.rank);
   }
 }
 

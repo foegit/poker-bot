@@ -3,6 +3,7 @@
 // };
 const { sortCards } = require('../cards/card');
 const NullCard = require('../cards/nullcard');
+const titles = require('./data/combination');
 
 const printCards = (cards) => {
   const cardsStr = cards.reduce((str, card) => `${str} ${card.getTitle()}`);
@@ -10,16 +11,68 @@ const printCards = (cards) => {
 };
 
 class Combination {
-  constructor(rank = 0, cards = [], kicker = []) {
+  constructor(rank = 0, cards = [], hand = null, board = null, kicker = []) {
     this.rank = rank;
     this.cards = cards;
     this.kicker = kicker;
+    this.hand = hand;
+    this.board = board;
+  }
+
+  greaterThan(comb) {
+    // порівняння рангів
+    if (this.rank > comb.rank) {
+      return true;
+    }
+
+    // порівняння старших карт
+    for (let i = 0; i < this.cards.length; i += 1) {
+      if (this.cards[i].creterThan(comb.cards[i])) {
+        return true;
+      }
+    }
+
+
+    if (this.cards.length === 5) {
+      return false;
+    }
+
+    // порівняння кікерів
+    if (this.cards.length < 5) {
+      const thisSelfKickers = this.hand.filter(card => this.kicker.includes(card));
+      const combSelfKickers = comb.hand.filter(card => this.kicker.includes(card));
+      if (thisSelfKickers.length === 0) {
+        return false;
+      }
+      if (combSelfKickers.length === 0) {
+        return true;
+      }
+      return true;
+    }
+
+    return false;
+  }
+
+  getSumOfCards() {
+    return this.cards.reduce((acc, card) => acc + card.rank);
+  }
+
+  getTitle() {
+    return (titles.find(c => c.rank === this.rank)).title.ua;
+  }
+
+  getCards() {
+    let res = '';
+    this.cards.forEach((c) => {
+      res += `[[${c.getTitle()}]]`;
+    });
+
+    return res;
   }
 }
 
 // Flush: 5 cards of the same suit
 const isFlush = (hand, board) => {
-  const info = new Combination();
   const cards = [...hand, ...board];
 
   if (cards.length < 5) {
@@ -39,7 +92,6 @@ const isFlush = (hand, board) => {
     cardSplitter[cards[i].suit].push(cards[i]);
   }
 
-
   let flush = [];
 
   Object.keys(cardSplitter).forEach((key) => {
@@ -49,10 +101,7 @@ const isFlush = (hand, board) => {
   });
 
   if (flush.length >= 5) {
-    info.rank = 6;
-    info.cards = flush.slice(0, 5);
-
-    return new Combination(6, flush.slice(0, 5));
+    return new Combination(6, flush.slice(0, 5), hand, board);
   }
 
   return false;
@@ -89,7 +138,7 @@ const isStreight = (hand, board) => {
       streight.pop();
       streight.push(cards[0]);
     }
-    return new Combination(5, streight);
+    return new Combination(5, streight, hand, board);
   }
   return false;
 };
@@ -104,7 +153,7 @@ const isStreightFlush = (hand, board) => {
         return false;
       }
     }
-    return new Combination(9, flush.cards);
+    return new Combination(9, flush.cards, hand, board);
   }
   return false;
 };
@@ -113,7 +162,7 @@ const isRoyalFlush = (hand, board) => {
   const streightFlush = isStreightFlush(hand, board);
 
   if (streightFlush && streightFlush.cards[0].order === 'a') {
-    return new Combination(10, streightFlush.cards);
+    return new Combination(10, streightFlush.cards, hand, board);
   }
 
   return false;
@@ -147,14 +196,15 @@ const getSameOrderCard = (cards, numOfCards, iteration = 1) => {
   return false;
 };
 
-const getKicker = (cards, hand) => {
-  const kicker = hand.filter((card) => {
+const getKicker = (cards, hand, board) => {
+  const maxKickerNum = 5 - cards.length;
+
+  const kicker = [...board, ...hand].filter((card) => {
     for (let i = 0; i < cards.length; i += 1) {
       if (card.order === cards[i].order && card.suit === cards[i].suit) {
         return false;
       }
     }
-
     return true;
   });
 
@@ -169,7 +219,7 @@ const getKicker = (cards, hand) => {
   //     }
   //   }
   // }
-  return kicker;
+  return sortCards(kicker).slice(0, maxKickerNum);
 };
 
 
@@ -178,19 +228,18 @@ const isFourOfAKind = (hand, board) => {
   const fourOfAKind = getSameOrderCard(cards, 4);
 
   if (fourOfAKind) {
-    const kicker = getKicker(fourOfAKind, hand);
-    return new Combination(8, fourOfAKind, kicker);
+    const kicker = getKicker(fourOfAKind, hand, board);
+    return new Combination(8, fourOfAKind, hand, board, kicker);
   }
   return false;
 };
-
 
 const isThreeOfAKind = (hand, board) => {
   const cards = sortCards([...hand, ...board]);
   const threeOfAKind = getSameOrderCard(cards, 3);
 
   if (threeOfAKind) {
-    return new Combination(4, threeOfAKind, getKicker(threeOfAKind, hand));
+    return new Combination(4, threeOfAKind, hand, board, getKicker(threeOfAKind, hand, board));
   }
   return false;
 };
@@ -200,7 +249,7 @@ const isPair = (hand, board) => {
   const pair = getSameOrderCard(cards, 2);
 
   if (pair) {
-    return new Combination(2, pair, getKicker(pair, hand));
+    return new Combination(2, pair, hand, board, getKicker(pair, hand, board));
   }
 
   return false;
@@ -221,8 +270,8 @@ const isFullHouse = (hand, board) => {
     const pair = getSameOrderCard(remainCards, 2);
     if (pair) {
       const fullHouse = [...threeOfAKind, ...pair];
-      const kicker = getKicker(fullHouse, hand);
-      return new Combination(7, fullHouse, kicker);
+      const kicker = [];
+      return new Combination(7, fullHouse, hand, board, kicker);
     }
   }
   return false;
@@ -236,15 +285,15 @@ const isTwoPair = (hand, board) => {
 
   if (pair1 && pair2) {
     const twoPair = [...pair1, ...pair2];
-    return new Combination(3, twoPair, getKicker(twoPair, hand));
+    return new Combination(3, twoPair, hand, board, getKicker(twoPair, hand, board));
   }
 
   return false;
 };
 
-const isHighCard = (hand) => {
+const isHighCard = (hand, board) => {
   const sortHand = sortCards(hand);
-  return new Combination(1, [sortHand[0]], [sortHand[1]]);
+  return new Combination(1, [sortHand[0]], hand, board, [sortHand[1]]);
 };
 
 const getStrongestComb = (hand, board) => (isRoyalFlush(hand, board)

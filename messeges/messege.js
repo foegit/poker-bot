@@ -25,15 +25,25 @@ module.exports = {
 
   flopCards(game) {
     const cards = game.currCircle.boardCard;
-    return `На столі з'являється три нові карти: ${formatCards(cards)}.`;
+    return `На столі з'являється три нові карти:\n${formatCards(cards)}`;
+  },
+
+  turnCard(game) {
+    const cards = game.currCircle.boardCard;
+    return `На столі з'являється додаткова карта:\n${formatCards(cards)}`;
+  },
+
+  riverCard(game) {
+    const cards = game.currCircle.boardCard;
+    return `На столі з'являється 5 карта:\n${formatCards(cards)}`;
   },
 
   makeBet(player, sum) {
-    return `🔴 ***${player.getTitle()}*** ставить ***${sum}*** 🍪.`;
+    return `🔴 ***${player.getTitle()}*** ставить ***${sum}***🍪`;
   },
 
   callBet(player, currBet) {
-    return `🔴 ***${player.getTitle()}*** підтримує ставку ***${currBet}*** 🍪.`;
+    return `🔴 ***${player.getTitle()}*** підтримує ставку ***${currBet}***🍪`;
   },
 
   playerFold(player) {

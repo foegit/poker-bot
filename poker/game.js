@@ -4,6 +4,7 @@ const Deck = require('../cards/deck');
 const Sender = require('../controllers/sender');
 const moveType = require('../const/move');
 const round = require('../const/gameRound');
+const combination = require('../poker/combination');
 
 class Game extends Emitter {
   constructor(gameId, title, player) {
@@ -15,6 +16,7 @@ class Game extends Emitter {
     this.deck = new Deck();
     this.minBet = 0;
     this.maxBet = 100;
+    this.deposit = 0;
 
     this.currCircle = {
       round: round.preFlop,
@@ -139,6 +141,8 @@ class Game extends Emitter {
 
     currCircle.round = round.flop;
     currCircle.underTheGun = players[1];
+    currCircle.bet = 0;
+    players.forEach(p => p.cleanBet());
 
     const [c1, c2, c3] = [deck.pickFront(), deck.pickFront(), deck.pickFront()];
 
@@ -148,6 +152,91 @@ class Game extends Emitter {
     this.emit('setFlopCards', this);
   }
 
+  startTurn() {
+    const { currCircle, players, deck } = this;
+
+    currCircle.round = round.turn;
+    currCircle.underTheGun = players[1];
+    currCircle.bet = 0;
+    players.forEach(p => p.cleanBet());
+
+    const c1 = deck.pickFront();
+
+    currCircle.pickedCard.push(c1);
+    currCircle.boardCard.push(c1);
+
+    this.emit('setTurnCard', this);
+  }
+
+  startRiver() {
+    const { currCircle, players, deck } = this;
+    currCircle.round = round.river;
+    currCircle.underTheGun = players[1];
+    currCircle.bet = 0;
+    players.forEach(p => p.cleanBet());
+
+    const c1 = deck.pickFront();
+
+    currCircle.pickedCard.push(c1);
+    currCircle.boardCard.push(c1);
+
+    this.emit('setRiverCard', this);
+  }
+
+  showDown() {
+    const { currCircle, players } = this;
+    let maxComb = { rank: 0 };
+
+    players.forEach((p) => {
+      const playerComb = combination.getStrongestComb(p.cards, currCircle.boardCard);
+      p.setComb(playerComb);
+
+      if (playerComb.rank > maxComb.rank) {
+        maxComb = playerComb;
+      } else if (playerComb.rank === maxComb.rank) {
+        for (let j = 0; j < playerComb.cards.length; j += 1) {
+          if (playerComb.cards[j].greaterThan(maxComb.cards[j])) {
+            maxComb = playerComb;
+            break;
+          }
+        }
+      }
+    });
+
+    const winners = players.filter(p => (p.comb.rank === maxComb.rank)
+      && (p.comb.cards[0].equal(maxComb.cards[0])));
+
+    const remPartOfBank = currCircle.bank % winners.length;
+    const bank = currCircle.bank - remPartOfBank;
+
+    const prize = bank / winners.length;
+
+    players.forEach(p => p.takeAwayBet());
+    winners.forEach(w => w.win(prize));
+
+    this.deposit = remPartOfBank;
+
+    this.emit('showdown', { game: this, players: winners, sum: prize });
+    this.emit('endOfCircle', this);
+  }
+
+  prepereNewRound() {
+    const { currCircle, players, deck } = this;
+
+    players.push(players.shift());
+
+    currCircle.round = round.preFlop;
+    [currCircle.dealer, currCircle.underTheGun] = players;
+    currCircle.pickedCard = [];
+    currCircle.boardCard = [];
+    currCircle.bank = 0;
+    currCircle.bet = 0;
+
+    deck.pushBack(currCircle.pickedCard);
+    deck.shuffle();
+
+    this.emit('roundPrepered', { game: this });
+  }
   // далі кожен гравець повинний зробити свій хід
   // на префлопі гравці можуть поставити початкову ставку
   // підтримати ставку або підвищити її
@@ -256,12 +345,16 @@ class Game extends Emitter {
     }
 
     if (sum > this.maxBet) {
-      throw new Error(`Ставка має бути більше ${this.maxBet}.`);
+      throw new Error(`Ставка має бути менше ${this.maxBet}.`);
     }
 
-    this.currCircle.bet = sum;
-    this.currCircle.underTheGun.bet = sum;
-    this.currCircle.bank += sum;
+    if (sum > (player.balance - player.totalBet)) {
+      throw new Error(`Недостатньо 🍪 для ставки. Доступно ${(player.balance - player.totalBet)}.`);
+    }
+    currCircle.bet = sum;
+    currCircle.bank += sum;
+    player.setBet(sum);
+
     this.emit('bet', { game: this, player, sum });
     this.moveEnd();
   }
@@ -273,7 +366,7 @@ class Game extends Emitter {
       throw new Error(`Початкова ставка ще не зроблена.\n ***/bet sum*** - щоб зробити ставку ${currCircle.round !== round.preFlop ? ', /check - не робити ставку' : ''}.`);
     }
 
-    player.bet = currCircle.bet;
+    player.setBet(currCircle.bet);
     currCircle.bank += this.currCircle.bet;
 
     this.emit('call', { game: this, player, sum: currCircle.bet });

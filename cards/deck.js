@@ -25,6 +25,11 @@ class Deck {
   }
 
   pushBack(card) {
+    if (card instanceof Array) {
+      card.forEach(c => this.pushBack(c));
+      return;
+    }
+
     this.cards.push(card);
   }
 

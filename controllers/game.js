@@ -30,6 +30,9 @@ class GameController extends Event {
     game.on('start', this.gameStart);
     game.on('handOutPreFlopCards', this.firstCards);
     game.on('setFlopCards', this.firstBoardCards);
+    game.on('setTurnCard', this.turnStart);
+    game.on('setRiverCard', this.riverStart);
+    game.on('showdown', this.showDown);
     game.on('bet', this.makeBet);
     game.on('call', this.callBet);
 
@@ -66,6 +69,40 @@ class GameController extends Event {
 
   async firstBoardCards(game) {
     await Sender.toAll(game.players, Text.flopCards(game));
+    game.requestMove();
+  }
+
+  async turnStart(game) {
+    await Sender.toAll(game.players, Text.turnCard(game));
+    game.requestMove();
+  }
+
+  async riverStart(game) {
+    await Sender.toAll(game.players, Text.riverCard(game));
+    game.requestMove();
+  }
+
+  async showDown({ game, players, sum }) {
+    let info = '***Кінець торгів. Розкриваємо карти.***\n\n';
+
+    game.players.forEach((p) => {
+      info += `***${p.getTitle()}*** ${p.comb.getTitle()} ${p.comb.getCards()}\n`;
+    });
+    if (players.length === 1) {
+      await Sender.toAll(game.players, `${info}\n\nБанк забирає ***${players[0].getTitle()}*** і отримує ***${sum}🍪***`);
+    } else {
+      let winners = '';
+
+      for (let i = 0; i < players.length - 1; i += 1) {
+        winners += `${players[i].getTitle()}, `;
+      }
+
+      winners += `${players[players.length - 1].getTitle()}`;
+
+      await Sender.toAll(game.players, `${info}\n\nБанк ділять між собою ***${winners}*** і отримують по ***${sum}🍪***`);
+    }
+
+    game.prepereNewRound();
   }
 
   async makeBet({ game, player, sum }) {

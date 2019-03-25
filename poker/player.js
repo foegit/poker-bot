@@ -7,7 +7,9 @@ class Player {
     this.cards = null;
     this.isMakeBet = false;
     this.bet = 0;
+    this.totalBet = 0;
     this.isFold = false;
+    this.comb = null;
 
     this.getTitle = this.getTitle.bind(this);
   }
@@ -37,6 +39,27 @@ class Player {
 
   setCards(cards) {
     this.cards = cards;
+  }
+
+  setBet(sum) {
+    this.bet = sum;
+    this.totalBet += sum;
+  }
+
+  takeAwayBet() {
+    this.balance -= this.bet;
+  }
+
+  win(sum) {
+    this.balance += sum;
+  }
+
+  setComb(comb) {
+    this.comb = comb;
+  }
+
+  cleanBet() {
+    this.bet = 0;
   }
 
   reset() {

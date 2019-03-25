@@ -8,6 +8,7 @@ const { spacer } = require('../controllers/utils');
 const Parser = require('./parser');
 const moveType = require('../const/move');
 
+
 class CommandHandler {
   constructor() {
     this.playerController = PlayerContoller;
@@ -40,7 +41,6 @@ class CommandHandler {
       return;
     }
 
-    await  console.log(1);
     const player = await this.getPlayer(ctx);
     switch (command) {
       case '/start': await this.start(ctx, player); break;
@@ -60,7 +60,6 @@ class CommandHandler {
       default: CommandHandler.unknown(ctx, player); break;
     }
     Logger.cmd(ctx);
-    await console.log(2);
   }
 
   async start(ctx, player) {
@@ -252,6 +251,7 @@ class CommandHandler {
       game.move(player, moveType.call);
     } catch (err) {
       Sender.error(ctx, err);
+      throw err;
     }
   }
 
