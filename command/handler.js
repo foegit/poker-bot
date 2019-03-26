@@ -8,6 +8,8 @@ const { spacer } = require('../controllers/utils');
 const Parser = require('./parser');
 const moveType = require('../const/move');
 
+const PlayerModel = require('../db/models/player');
+
 
 class CommandHandler {
   constructor() {
@@ -43,6 +45,9 @@ class CommandHandler {
 
     const player = await this.getPlayer(ctx);
     switch (command) {
+      // TEST
+      case '/test': await this.test(ctx, player); break;
+      // START
       case '/start': await this.start(ctx, player); break;
       case '/game': await this.game(ctx, player); break;
       case '/delete': await this.delete(ctx, player); break;
@@ -57,6 +62,9 @@ class CommandHandler {
       case '/begin': await this.begin(ctx, player); break;
       case '/bet': await this.bet(ctx, player); break;
       case '/call': await this.call(ctx, player); break;
+      case '/fold': await this.fold(ctx, player); break;
+      case '/raise': await this.raise(ctx, player); break;
+      case '/check': await this.check(ctx, player); break;
       default: CommandHandler.unknown(ctx, player); break;
     }
     Logger.cmd(ctx);
@@ -235,12 +243,12 @@ class CommandHandler {
     try {
       game.move(player, moveType.bet, sum);
     } catch (err) {
-      Sender.error(ctx, err);
+      Sender.sendMessage(ctx, 'Щось пішло не так... Спробуйте пізніше.');
+      throw err;
     }
   }
 
   async call(ctx, player) {
-    console.log(3);
     const { game } = player;
     if (!player.game) {
       Sender.error(ctx, 'Ви не граєте в жодну гру!');
@@ -255,6 +263,53 @@ class CommandHandler {
     }
   }
 
+  async fold(ctx, player) {
+    const { game } = player;
+    if (!player.game) {
+      Sender.error(ctx, 'Ви не граєте в жодну гру!');
+      return;
+    }
+
+    try {
+      game.move(player, moveType.fold);
+    } catch (err) {
+      Sender.error(ctx, err);
+      throw err;
+    }
+  }
+
+  async raise(ctx, player) {
+    const { game } = player;
+    if (!player.game) {
+      Sender.error(ctx, 'Ви не граєте в жодну гру!');
+      return;
+    }
+
+    const sum = +(Parser.getParam(ctx));
+
+    try {
+      game.move(player, moveType.raise, sum);
+    } catch (err) {
+      Sender.error(ctx, err);
+      throw err;
+    }
+  }
+
+  async check(ctx, player) {
+    const { game } = player;
+    if (!player.game) {
+      Sender.error(ctx, 'Ви не граєте в жодну гру!');
+      return;
+    }
+
+    try {
+      game.move(player, moveType.check);
+    } catch (err) {
+      Sender.error(ctx, err);
+      throw err;
+    }
+  }
+
   static unknown(ctx) {
     Sender.error(ctx, `Невідома команда: ___${ctx.message.text}___`);
   }
@@ -263,6 +318,11 @@ class CommandHandler {
     const cube = (Date.now() % 6) + 1;
 
     Sender.sendMessage(ctx, `🎲 ${cube}`);
+  }
+
+  async test(ctx, player) {
+    const a = await PlayerModel.findOne({ tid: player.tid }).select('balance');
+    console.log(a.balance);
   }
 }
 

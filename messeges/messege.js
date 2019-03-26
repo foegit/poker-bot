@@ -8,7 +8,7 @@ const formatCards = (cards) => {
 
 module.exports = {
   greeting(player) {
-    return `👋 Привіт, ***${player.getTitle()}***!\nТвій баланс ${player.balance}🍪.`;
+    return `👋 Привіт, ***${player.getTitle()}***!\nТвій баланс ${player.getBalance()}🍪.`;
   },
 
   gameCreated(game) {
@@ -20,7 +20,7 @@ module.exports = {
   },
 
   youCards(player) {
-    return `Ваші карти: ${formatCards(player.cards)}.`;
+    return `***Початок торгів***\n\nВаші карти: ${formatCards(player.cards)}.`;
   },
 
   flopCards(game) {
@@ -46,7 +46,23 @@ module.exports = {
     return `🔴 ***${player.getTitle()}*** підтримує ставку ***${currBet}***🍪`;
   },
 
-  playerFold(player) {
+  foldBet(player) {
     return `🔴 ***${player.getTitle()}*** виходить з торгів.`;
+  },
+
+  raiseBet(player, sum) {
+    return `🔴 ***${player.getTitle()}*** підвищує ставку на ***${sum}***🍪`;
+  },
+
+  checkBet(player) {
+    return `🔴 ***${player.getTitle()}*** очікує ставок інших гравців. Check`;
+  },
+
+  moveRequest(hand, board, moves) {
+    return `***Ваш хід***\nРука: ${formatCards(hand)}\nСтіл: ${formatCards(board)}\n\n${moves}`;
+  },
+
+  waitForBet(player) {
+    return `🕐 Очікування ходу від ***${player.getTitle()}***.`;
   },
 };

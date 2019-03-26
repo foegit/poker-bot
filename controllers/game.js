@@ -27,16 +27,27 @@ class GameController extends Event {
     this.games.push(game);
     player.joinTo(game);
 
+    game.on('error', this.errorHandler);
+
     game.on('start', this.gameStart);
-    game.on('handOutPreFlopCards', this.firstCards);
-    game.on('setFlopCards', this.firstBoardCards);
-    game.on('setTurnCard', this.turnStart);
-    game.on('setRiverCard', this.riverStart);
-    game.on('showdown', this.showDown);
+    game.on('handOutPreFlopCards', this.delay(this.firstCards, 800));
+    game.on('setFlopCards', this.delay(this.firstBoardCards, 800));
+    game.on('setTurnCard', this.delay(this.turnStart, 800));
+    game.on('setRiverCard', this.delay(this.riverStart, 800));
+    game.on('showdown', this.delay(this.showDown));
+    game.on('aheadWinner', this.delay(this.aheadWinner));
     game.on('bet', this.makeBet);
     game.on('call', this.callBet);
+    game.on('fold', this.foldBet);
+    game.on('raise', this.raiseBet);
+    game.on('check', this.checkBet);
+    game.on('wait', this.delay(this.requestMove, 1000));
 
     return game;
+  }
+
+  async errorHandler(error) {
+    await Sender.toPlayer(error.player, error.text);
   }
 
   async deleteGame(game) {
@@ -52,34 +63,24 @@ class GameController extends Event {
     return (this.games.find(g => g.title === gameTitle) || false);
   }
 
-  async gameStart(game) {
+  async gameStart({ game }) {
     await Sender.toAll(game.players, Text.gameStarted(game));
-    game.requestMove();
   }
 
-  async firstCards(game) {
-    const sendQueue = [];
-
-    game.players.forEach((p) => {
-      sendQueue.push(Sender.toPlayer(p, Text.youCards(p)));
-    });
-
-    Promise.all(sendQueue);
+  async firstCards({ game }) {
+    await Sender.toAll(game.players, p => Text.youCards(p));
   }
 
-  async firstBoardCards(game) {
+  async firstBoardCards({ game }) {
     await Sender.toAll(game.players, Text.flopCards(game));
-    game.requestMove();
   }
 
-  async turnStart(game) {
+  async turnStart({ game }) {
     await Sender.toAll(game.players, Text.turnCard(game));
-    game.requestMove();
   }
 
-  async riverStart(game) {
+  async riverStart({ game }) {
     await Sender.toAll(game.players, Text.riverCard(game));
-    game.requestMove();
   }
 
   async showDown({ game, players, sum }) {
@@ -101,8 +102,11 @@ class GameController extends Event {
 
       await Sender.toAll(game.players, `${info}\n\nБанк ділять між собою ***${winners}*** і отримують по ***${sum}🍪***`);
     }
+  }
 
-    game.prepereNewRound();
+  async aheadWinner({ game, player, sum }) {
+    const info = '***Кінець торгів.***\n\n';
+    await Sender.toAll(game.players, `${info}Банк забирає ***${player.getTitle()}*** і отримує ***${sum}🍪***`);
   }
 
   async makeBet({ game, player, sum }) {
@@ -112,6 +116,36 @@ class GameController extends Event {
   async callBet({ game, player, sum }) {
     await Sender.toAll(game.players, Text.callBet(player, sum));
   }
+
+  async foldBet({ game, player, sum }) {
+    await Sender.toAll(game.players, Text.foldBet(player, sum));
+  }
+
+  async raiseBet({ game, player, sum }) {
+    await Sender.toAll(game.players, Text.raiseBet(player, sum));
+  }
+
+  async checkBet({ game, player }) {
+    await Sender.toAll(game.players, Text.checkBet(player));
+  }
+
+  async requestMove({ game }) {
+    const player = game.currCircle.underTheGun;
+    const moves = game.getAvailableMoves(player);
+    await Sender.toPlayer(player,
+      Text.moveRequest(player.cards, game.currCircle.boardCard, moves));
+    await Sender.toAll(game.players.filter(p => p !== player), Text.waitForBet(player));
+  }
+
+  delay(callback, timedelay) {
+    return (game) => {
+      setTimeout(() => callback(game), timedelay);
+    };
+  }
+
+  // async delay(arg, callback, timedelay) {
+  //   return setInterval(() => callback(arg), timedelay);
+  // }
 }
 
 module.exports = new GameController();

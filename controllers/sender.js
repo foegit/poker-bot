@@ -6,6 +6,7 @@ class Sender {
 
       this.sendAll = this.sendAll.bind(this);
       this.toAll = this.toAll.bind(this);
+      this.queue = [];
       Sender.instance = this;
     }
     return Sender.instance;
@@ -47,9 +48,13 @@ class Sender {
     await Promise.all(msgpool);
   }
 
-  async toAll(players, msgText) {
+  async toAll(players, text) {
+    if (players.length === 0) {
+      return;
+    }
     const msgpool = [];
-    players.forEach(p => msgpool.push(this.toPlayer(p, msgText)));
+    const f = p => (typeof text === 'function' ? text(p) : text);
+    players.forEach(p => msgpool.push(this.toPlayer(p, f(p))));
 
     await Promise.all(msgpool);
   }
