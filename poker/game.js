@@ -43,6 +43,8 @@ class Game extends Emitter {
     this.on('fold', this.moveEnd);
     this.on('raise', this.moveEnd);
     this.on('check', this.moveEnd);
+    this.on('leave', this.afterLeave);
+    this.on('lastOnePlayer', this.correctlyGameStop);
     this.emit('create', this);
 
     this.gCheck = new GCheck(this);
@@ -121,7 +123,8 @@ class Game extends Emitter {
     this.players.push(player);
   }
 
-  leave(player) {
+  async leave(player) {
+    await player.takeAwayBet();
     this.players = this.players.filter(p => p.tid !== player.tid);
     if (player.tid === this.owner.tid) {
       let newOwner = this.players[0];
@@ -132,6 +135,27 @@ class Game extends Emitter {
       }
       this.owner = newOwner;
     }
+
+    this.emit('leave', { game: this, player });
+  }
+
+  afterLeave() {
+    if (this.players.length < 2) {
+      this.active = false;
+      this.emit('lastOnePlayer', { game: this });
+    }
+  }
+
+  async correctlyGameStop() {
+    const [player] = this.players;
+    const { currCircle } = this;
+
+    const prize = currCircle.bank + this.deposit;
+    await player.takeAwayBet();
+    await player.replenish(prize);
+
+    this.emit('gameStop', { game: this });
+    this.emit('takeAll', { game: this, player, sum: prize });
   }
 
   // метод повертає гравця який наступним має ходити
@@ -270,13 +294,11 @@ class Game extends Emitter {
     const { currCircle, players } = this;
     const lastPlayer = players.find(p => !(p.isFold));
     const prize = currCircle.bank;
-    const upPrize = prize - lastPlayer.bet;
-
     players.forEach(p => p.takeAwayBet());
 
     lastPlayer.replenish(prize);
 
-    this.emit('aheadWinner', { game: this, player: lastPlayer, sum: upPrize });
+    this.emit('aheadWinner', { game: this, player: lastPlayer, sum: prize });
     this.emit('endcircle', { game: this });
   }
 

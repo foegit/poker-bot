@@ -30,6 +30,9 @@ class GameController extends Event {
     game.on('error', this.errorHandler);
 
     game.on('start', this.gameStart);
+    game.on('leave', this.gameLeave);
+    game.on('gameStop', this.gameStop);
+    game.on('takeAll', this.takeAll);
     game.on('handOutPreFlopCards', this.delay(this.firstCards, 800));
     game.on('setFlopCards', this.delay(this.firstBoardCards, 800));
     game.on('setTurnCard', this.delay(this.turnStart, 800));
@@ -65,6 +68,18 @@ class GameController extends Event {
 
   async gameStart({ game }) {
     await Sender.toAll(game.players, Text.gameStarted(game));
+  }
+
+  async gameLeave({ game, player }) {
+    await Sender.toAll(game.players, Text.gameLeave(player));
+  }
+
+  async gameStop({ game, player }) {
+    await Sender.toAll(game.players, Text.gameStop(player));
+  }
+
+  async takeAll({ player, sum }) {
+    await Sender.toPlayer(player, Text.takeAll(sum));
   }
 
   async firstCards({ game }) {
@@ -142,10 +157,6 @@ class GameController extends Event {
       setTimeout(() => callback(game), timedelay);
     };
   }
-
-  // async delay(arg, callback, timedelay) {
-  //   return setInterval(() => callback(arg), timedelay);
-  // }
 }
 
 module.exports = new GameController();

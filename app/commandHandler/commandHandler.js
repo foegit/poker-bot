@@ -1,5 +1,5 @@
-const PlayerContoller = require('../controllers/player');
-const GameController = require('../controllers/game');
+// const PlayerContoller = require('../controllers/player');
+// const GameController = require('../controllers/game');
 const Sender = require('../controllers/sender');
 const Logger = require('../controllers/logger');
 const Text = require('../messeges/messege');
@@ -10,9 +10,12 @@ const moveType = require('../const/move');
 
 const PlayerModel = require('../db/models/player');
 
-
 class CommandHandler {
-  constructor() {
+  constructor(logger, sender) {
+    this.logger = logger;
+    this.sender = sender;
+
+
     this.playerController = PlayerContoller;
     this.gameController = GameController;
 
@@ -44,32 +47,34 @@ class CommandHandler {
     }
 
     const player = await this.getPlayer(ctx);
-    switch (command) {
-      // TEST
-      case '/test': await this.test(ctx, player); break;
-      // START
-      case '/start': await this.start(ctx, player); break;
-      case '/game': await this.game(ctx, player); break;
-      case '/delete': await this.delete(ctx, player); break;
-      case '/gamelist': await this.gamelist(ctx, player); break;
-      case '/join': await this.join(ctx, player); break;
-      case '/b': await this.balance(ctx, player); break;
-      case '/cube': await CommandHandler.cube(ctx, player); break; // TODO:  create another file for this func like toys.js
-      // TABLE
-      case '/leave': await this.leave(ctx, player); break;
-      case '/here': await this.here(ctx, player); break;
-      case '/say': await this.say(ctx, player); break;
-      case '/info': await this.info(ctx, player); break;
-      // POKER
-      case '/begin': await this.begin(ctx, player); break;
-      case '/bet': await this.bet(ctx, player); break;
-      case '/call': await this.call(ctx, player); break;
-      case '/fold': await this.fold(ctx, player); break;
-      case '/raise': await this.raise(ctx, player); break;
-      case '/check': await this.check(ctx, player); break;
-      default: CommandHandler.unknown(ctx, player); break;
+    try {
+      switch (command) {
+        // TEST
+        case '/test': await this.test(ctx, player); break;
+        // START
+        case '/start': await this.start(ctx, player); break;
+        case '/game': await this.game(ctx, player); break;
+        case '/delete': await this.delete(ctx, player); break;
+        case '/gamelist': await this.gamelist(ctx, player); break;
+        case '/join': await this.join(ctx, player); break;
+        case '/b': await this.balance(ctx, player); break;
+        case '/cube': await CommandHandler.cube(ctx, player); break; // TODO:  create another file for this func like toys.js
+        // TABLE
+        case '/leave': await this.leave(ctx, player); break;
+        case '/here': await this.here(ctx, player); break;
+        case '/say': await this.say(ctx, player); break;
+        // POKER
+        case '/begin': await this.begin(ctx, player); break;
+        case '/bet': await this.bet(ctx, player); break;
+        case '/call': await this.call(ctx, player); break;
+        case '/fold': await this.fold(ctx, player); break;
+        case '/raise': await this.raise(ctx, player); break;
+        case '/check': await this.check(ctx, player); break;
+        default: CommandHandler.unknown(ctx, player); break;
+      }
+    } catch (err) {
+      console.log();
     }
-    Logger.cmd(ctx);
   }
 
   async start(ctx, player) {
@@ -78,10 +83,6 @@ class CommandHandler {
 
   async balance(ctx, player) {
     await Sender.sendMessage(ctx, Text.balanceInfo(player));
-  }
-
-  async info(ctx, player) {
-    await Sender.sendMessage(ctx, Text.info(player));
   }
 
   async game(ctx, player) {
@@ -239,8 +240,7 @@ class CommandHandler {
     try {
       game.start(player);
     } catch (err) {
-      // eslint-disable-next-line
-      console.error(err);
+      Sender.error(ctx, err);
     }
   }
 
@@ -254,8 +254,8 @@ class CommandHandler {
     try {
       game.move(player, moveType.bet, sum);
     } catch (err) {
-      // eslint-disable-next-line
-      console.error(err);
+      Sender.sendMessage(ctx, 'Щось пішло не так... Спробуйте пізніше.');
+      throw err;
     }
   }
 
@@ -269,8 +269,8 @@ class CommandHandler {
     try {
       game.move(player, moveType.call);
     } catch (err) {
-      // eslint-disable-next-line
-      console.error(err);
+      Sender.error(ctx, err);
+      throw err;
     }
   }
 
@@ -284,8 +284,8 @@ class CommandHandler {
     try {
       game.move(player, moveType.fold);
     } catch (err) {
-      // eslint-disable-next-line
-      console.error(err);
+      Sender.error(ctx, err);
+      throw err;
     }
   }
 
@@ -301,8 +301,8 @@ class CommandHandler {
     try {
       game.move(player, moveType.raise, sum);
     } catch (err) {
-      // eslint-disable-next-line
-      console.error(err);
+      Sender.error(ctx, err);
+      throw err;
     }
   }
 
@@ -316,8 +316,8 @@ class CommandHandler {
     try {
       game.move(player, moveType.check);
     } catch (err) {
-      // eslint-disable-next-line
-      console.error(err);
+      Sender.error(ctx, err);
+      throw err;
     }
   }
 
@@ -331,10 +331,9 @@ class CommandHandler {
     Sender.sendMessage(ctx, `🎲 ${cube}`);
   }
 
-
   async test(ctx, player) {
     const a = await PlayerModel.findOne({ tid: player.tid }).select('balance');
-    console.error(a.balance);
+    console.log(a.balance);
   }
 }
 

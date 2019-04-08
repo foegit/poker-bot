@@ -19,6 +19,35 @@ module.exports = {
     return `***✨ Гру ${game.title} розпочато. Удачі і приємної гри.***`;
   },
 
+  balanceInfo(player) {
+    return `📦 Ваш баланс: ***${player.getBalance()}***🍪`;
+  },
+
+  info(player) {
+    let info = '';
+    if (player.cards) {
+      info += `🖐 ***Рука***: ${formatCards(player.cards)}\n`;
+      info += `👁‍🗨 ***Стіл***: ${formatCards(player.game.currCircle.boardCard)}\n`;
+    }
+    if (player.game) {
+      info += `🛒 ***Банк***: ${player.game.currCircle.bank}`;
+    }
+
+    return info;
+  },
+
+  gameLeave(player) {
+    return `***${player.getTitle()} покидає гру и виходить з торгів.***`;
+  },
+
+  gameStop() {
+    return '***Гра зупинена.***';
+  },
+
+  takeAll(sum) {
+    return `Ви забираєте весь банк: ***${sum}🍪***`;
+  },
+
   youCards(player) {
     return `***Початок торгів***\n\nВаші карти: ${formatCards(player.cards)}.`;
   },

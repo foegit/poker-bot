@@ -51,7 +51,7 @@ class Player {
 
   async replenish(sum) {
     if (!Number.isInteger(sum)) {
-      throw new Error('Сума поповнення має бути цілим числом.');
+      throw new Error(`Сума поповнення має бути цілим числом. Сумма: ${sum}`);
     }
 
     if (sum < 0) {
